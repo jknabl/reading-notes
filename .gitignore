@@ -1,0 +1,20 @@
+#specific files
+config.txt
+book_state.txt
+reading_notes.db
+
+#compiled python code
+*.pyc
+
+#random
+*.log
+*.sql
+*.sqlite
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
