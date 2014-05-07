@@ -3,6 +3,12 @@ config.txt
 book_state.txt
 reading_notes.db
 
+#TeX stuff
+*.tex
+*.pdf
+*.log
+*.aux
+
 #compiled python code
 *.pyc
 

@@ -4,17 +4,23 @@ import sqlite3
 import httplib
 from lxml import etree
 import string
-
+import subprocess
+import urllib
+# Return the ID# of the currently active book
 def get_current_book():
     f = open('book_state.txt', 'r')
     current = f.readline()
     if current == "None":
+        # No active book, return None.
         return None
     else:
         return int(current)
 
+# Manually insert a book by entering each field
+# one-by-one.
 def insert_book_manual():
-    print "Add a book. If you don't want to enter data in a particular field, leave it blank and press enter."
+    print "Add a book. If you don't want to enter data in a particular field, \
+            leave it blank and press enter."
     print "Name of the book is:"
     name = raw_input()
     print "Author is:"
@@ -25,20 +31,27 @@ def insert_book_manual():
     publisher = raw_input()
     print "Publication date is:"
     pub_date = raw_input()
+    print "URL is:"
+    url = raw_input()
     print "Genre is:"
     genre = raw_input()
-    print "Number of pages is:"
+    print "Number of pages is (enter 0 if N/A):"
     try:
-        pages = int(raw_input())
+        # Was the page number legit?
+        pages = raw_input()
+        if pages != "":
+            pages = int(pages)
     except:
         print "Numeric values only. Try again."
+    # Connect to DB
     connection = sqlite3.connect('reading_notes.db')
     cursor = connection.cursor()
-    cursor.execute('''INSERT INTO work(author, isbn, title, publisher, pub_year, genre, pages) VALUES(?, ?, ?, ?, ?, ?, ?)''', (author, isbn, name, publisher, pub_date, genre, pages))
+    # Insert all the data.
+    cursor.execute('''INSERT INTO work(author, isbn, title, publisher, pub_year, genre, pages, url) VALUES(?, ?, ?, ?, ?, ?, ?, ?)''', (author, isbn, name, publisher, pub_date, genre, pages, url))
     connection.commit()
     connection.close()
 
-
+# Print the title and author of the currently active book
 def print_book_info():
     book_id = get_current_book()
     if book_id == None:
@@ -46,14 +59,17 @@ def print_book_info():
     else:
         connection = sqlite3.connect('reading_notes.db')
         cursor = connection.cursor()
+        # Get rows with matching book ID
         cursor.execute("SELECT * FROM work WHERE work_id =?", (book_id, ))
         book = cursor.fetchone()
         print "Active book is %s by %s" % (book[3], book[1])
 
+# Change the active book by selecting another book ID
 def change_active_book():
     valid_ids = []
     connection = sqlite3.connect('reading_notes.db')
     cursor = connection.cursor()
+    # Loop through all works and display on screen.
     for row in cursor.execute('''SELECT * FROM work'''):
         print "Book ID %d is %s by %s" % (row[0], row [3], row[1])
         valid_ids.append(row[0])
@@ -62,6 +78,7 @@ def change_active_book():
         selection = raw_input()
         file = open('book_state.txt', 'w')
         if selection == "None":
+            # Active book to be reset
             file.write(selection)
             print "Active book cleared."
         elif int(selection) in valid_ids:
@@ -96,7 +113,6 @@ def add_quotation(quotation):
         print "Successfully added quotation."
     except:
         print "Error. Try again."
-
 
 def add_note(note):
     print "Add a note."
@@ -185,10 +201,12 @@ def search_book(query):
     api_key = string.split(f.readline(), '=')[1]
     print "API KEY IS %s" % api_key
     search_results = []
+    the_query = urllib.urlencode({'key' : api_key, 'q' : query[0]})
     #make http request
     search = httplib.HTTPConnection('www.goodreads.com')
-    search.request("GET", "/search.xml?key=%s&q=%s" % (api_key, query[0]))
+    search.request("GET", "/search.xml?%s" % the_query)
     response = search.getresponse().read()
+    print response
     #now parse
     tree = etree.fromstring(response)
     titles = tree.findall('.//title')
@@ -230,6 +248,41 @@ def choose_search_book(results):
             else:
                 print "Invalid option. Choose Y/N."
 
+def write_current_to_tex():
+    book = get_current_book()
+    if book == None:
+        print "You must select an active book [-a] before exporting to TeX."
+        return None
+    connection = sqlite3.connect('reading_notes.db')
+    cursor = connection.cursor()
+    # author should be [0], title [1]
+    book_details = cursor.execute('''SELECT author, title FROM work WHERE work_id=?''', (book, )).fetchone()
+    print "What would you like to name the file?"
+    file_name = raw_input()
+    f = open('%s.tex' % file_name, 'w')
+    f.write("\documentclass{article}\\author{%s}\\title{%s}\date{\\today}\\begin{document}\maketitle\section{Reading Notes}""" % (book_details[0], book_details[1]))
+# iterate over notes for this book
+    for row in cursor.execute('''SELECT * from note where work_id =?''', (book, )):
+        f.write('\subsection{%d}' % row[0])
+        if row[1] != "":
+            f.write('''
+                Quotation: %s
+                \\newline''' % row[1])
+        if row[2] != "":
+            f.write('''
+                Note: %s
+                \\newline''' % row[2])
+        f.write(' On page %d' % row[3])
+    f.write('\end{document}')
+    f.close()
+    return file_name
+
+def compile_and_export_tex(filename):
+    file_name = "%s.tex" % filename
+    subprocess.call(['pdflatex', file_name])
+    return None
+
+
 def search_book_option(args):
     choose_search_book(search_book(args))
 def pass_args(args):
@@ -251,6 +304,8 @@ def pass_args(args):
         add_quotation_with_note(args.quotationnote)
     if args.delete != None:
         delete_record(args.delete)
+    if args.exportpdf != None:
+        compile_and_export_tex(write_current_to_tex())
 
 def main():
     parser = argparse.ArgumentParser(description='Manage reading notes from the CL.')
@@ -263,6 +318,7 @@ def main():
     parser.add_argument('-qn', '--quotationnote', nargs=3, help="[\'quotation\'] [\'note\'] [page #]")
     parser.add_argument('-p', '--printquotationsnotes', nargs='*', help="Print all quotations and notes for active book.")
     parser.add_argument('-d', '--delete', nargs=1, help="Delete quotation/note with given ID number. To see all quotations/notes with IDs for active book, use [-p]")
+    parser.add_argument('-x', '--exportpdf', nargs='*', help='Export current book\'s notes as pdf via LaTeX.')
     args = parser.parse_args()
     pass_args(args)
 

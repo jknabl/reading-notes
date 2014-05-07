@@ -22,6 +22,7 @@ def create_db():
             publisher text,
             pub_year text,
             genre text,
+            url text,
             pages integer
         );
 
