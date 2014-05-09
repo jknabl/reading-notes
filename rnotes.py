@@ -8,6 +8,9 @@ import subprocess
 import urllib
 # Return the ID# of the currently active book
 def get_current_book():
+    """Print the ID of the currently active book.
+
+    """
     f = open('book_state.txt', 'r')
     current = f.readline()
     if current == "None":
@@ -19,6 +22,9 @@ def get_current_book():
 # Manually insert a book by entering each field
 # one-by-one.
 def insert_book_manual():
+    """Manually enter a book into the DB.
+
+    """
     print "Add a book. If you don't want to enter data in a particular field, \
             leave it blank and press enter."
     print "Name of the book is:"
@@ -53,6 +59,9 @@ def insert_book_manual():
 
 # Print the title and author of the currently active book
 def print_book_info():
+    """Print the active book's information.
+
+    """
     book_id = get_current_book()
     if book_id == None:
         print "There is no active book. Please add a book by searching."
@@ -66,6 +75,9 @@ def print_book_info():
 
 # Change the active book by selecting another book ID
 def change_active_book():
+    """Select a new book to make active.
+
+    """
     valid_ids = []
     connection = sqlite3.connect('reading_notes.db')
     cursor = connection.cursor()
