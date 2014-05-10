@@ -106,6 +106,9 @@ def search_book():
     print "Search for a book."
 
 def add_quotation(quotation):
+    """Add a quotation from the active book to the DB.
+
+    """
     print "Add a quotation."
     print quotation[0]
     work_id = get_current_book()
@@ -127,6 +130,9 @@ def add_quotation(quotation):
         print "Error. Try again."
 
 def add_note(note):
+    """Add a reading note about the active book to the DB.
+
+    """
     print "Add a note."
     work_id = get_current_book()
     if work_id == None:
@@ -147,6 +153,9 @@ def add_note(note):
         print "Error. Try again."
 
 def add_quotation_with_note(args):
+    """Add both a quotation and a reading note to the active book
+
+    """
     print "Add a quotation with a note."
     work_id = get_current_book()
     if work_id == None:
@@ -167,6 +176,9 @@ def add_quotation_with_note(args):
         print "Error. Try again."
 
 def print_quotations_notes():
+    """Print all quotations/notes for the active book
+
+    """
     print "Print all quotations and notes about active book."
     work_id = get_current_book()
     if work_id == None:
@@ -183,6 +195,9 @@ def print_quotations_notes():
         print "On page %d\n\n" % row[3]
 
 def delete_record(args):
+    """Delete the active book from the DB
+
+    """
     work_id = get_current_book()
     record_ids = []
     if work_id == None:
@@ -208,6 +223,9 @@ def delete_record(args):
 #search goodreads API for a query. If a relevant query is found, return
 #relevant book info as an array.
 def search_book(query):
+    """Search for book information via the Goodreads API.
+
+    """
     #NEEDS GOODREADS API KEY. ENTER IN CONFIG.TXT
     f = open('config.txt', 'r')
     api_key = string.split(f.readline(), '=')[1]
@@ -230,6 +248,9 @@ def search_book(query):
     return search_results
 
 def choose_search_book(results):
+    """Accept or reject a book search and add the book to the DB.
+
+    """
     count = 0
     while count < len(results):
         print "Found a book called \"%s\" by %s. Choose this book? (Y/N). Press Q to stop." % (results[count][0], results[count][1])
@@ -261,6 +282,9 @@ def choose_search_book(results):
                 print "Invalid option. Choose Y/N."
 
 def write_current_to_tex():
+    """Write notes/quotations to .pdf via LaTeX
+
+    """
     book = get_current_book()
     if book == None:
         print "You must select an active book [-a] before exporting to TeX."
@@ -290,6 +314,9 @@ def write_current_to_tex():
     return file_name
 
 def compile_and_export_tex(filename):
+    """Compile/export a .tex file to .pdf
+
+    """
     file_name = "%s.tex" % filename
     subprocess.call(['pdflatex', file_name])
     return None
