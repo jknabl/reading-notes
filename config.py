@@ -2,6 +2,10 @@
 import sqlite3
 
 def gen_config():
+    """Generate a configuration file if it doesn't exist, otherwise open
+    the existing file.
+
+    """
     try:
         f = open('config.txt', 'r')
     except:
@@ -11,6 +15,9 @@ def gen_config():
 
 
 def create_db():
+    """Create and populate the reading notes DB.
+
+    """
     connection = sqlite3.connect('reading_notes.db')
     cursor = connection.cursor()
     cursor.executescript("""
@@ -39,6 +46,10 @@ def create_db():
     connection.close()
 
 def create_state():
+    """Open the file that contains book state, otherwise create it and write
+    for the first time.
+
+    """
     try:
         f = open('book_state.txt', 'r')
     except:
